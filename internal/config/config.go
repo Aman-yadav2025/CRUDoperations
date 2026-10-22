@@ -9,7 +9,7 @@ import (
 )
 //HttpServer config info main address port etc
 type HttpServer struct {
-	Addr string
+	Addr string `yaml:"address" env-required: "true"`
 }
 
 // main config info having env path and storage variables
@@ -21,6 +21,7 @@ type Config struct {
 
 
 // function that returns the complete config info struct 
+//throw fatal stop immediatly if function with naming Must fails
 func MustLoad() *Config{
 
 	//config path
