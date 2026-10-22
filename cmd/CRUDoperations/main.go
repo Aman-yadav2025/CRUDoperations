@@ -2,6 +2,7 @@ package main
 
 import (
 	"CRUDapp/internal/config"
+	"CRUDapp/internal/http/handlers/student"
 	"context"
 	"log"
 	"log/slog"
@@ -20,9 +21,7 @@ func main() {
 	router := http.NewServeMux() // intiate router
 
 	//create endpoints
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello welcome to myapp"))
-	})
+	router.HandleFunc("POST /api/students", student.New())
 	//setup server
 	//start the server
 	server := http.Server{
