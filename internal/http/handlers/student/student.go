@@ -1,18 +1,22 @@
 package student
 
 import (
+	"CRUDapp/internal/storage"
 	"CRUDapp/internal/types"
 	"CRUDapp/internal/utils/response"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	//"golang.org/x/mod/sumdb/storage"
 )
 
-func New() http.HandlerFunc {
+func New(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		slog.Info("Initiating Student Creation")
@@ -43,6 +47,42 @@ func New() http.HandlerFunc {
 			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
 			return
 		}
-		response.WriteJson(w, http.StatusCreated, map[string]string{"success": "OK"})
+
+		Lastid, err := storage.CreateStudent(
+			student.Name,
+			student.Email,
+			student.Age,
+		)
+
+		if err != nil {
+			response.WriteJson(w, http.StatusInternalServerError, err)
+			slog.Error("user Creatation failed")
+			return
+		}
+
+		slog.Info("user Created successfully", slog.String("userID", fmt.Sprint(Lastid)))
+		response.WriteJson(w, http.StatusCreated, map[string]int64{"id": Lastid})
+	}
+}
+
+func GetById(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		slog.Info("Getting the student", slog.String("id", id))
+
+		intId, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+			slog.Error("can't convert id to int64", slog.String("id",id))
+			return
+		}
+		student, e := storage.GetStudentById(intId)
+
+		if e != nil {
+			response.WriteJson(w,http.StatusInternalServerError,response.GeneralError(e))
+			slog.Error("Can't get the student with id",slog.String("id",id))
+			return
+		}
+		response.WriteJson(w,http.StatusOK,student)
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"CRUDapp/internal/config"
 	"CRUDapp/internal/http/handlers/student"
+	"CRUDapp/internal/storage/sqlite"
 	"context"
 	"log"
 	"log/slog"
@@ -17,11 +18,21 @@ func main() {
 	//step1 load the config
 	cfg := config.MustLoad()
 	//step2 stepup dataBase
+
+	storage, err := sqlite.New(cfg)
+
+	if err != nil {
+		log.Fatalf("database is fucked %s", err)
+	}
+	slog.Info("storage Intialized",slog.String("env",cfg.Env),slog.String("version","1.0.0"))
+
 	//setup routers
 	router := http.NewServeMux() // intiate router
 
 	//create endpoints
-	router.HandleFunc("POST /api/students", student.New())
+	router.HandleFunc("POST /api/students", student.New(storage))
+
+	router.HandleFunc("GET /api/students/{id}", student.GetById(storage))
 	//setup server
 	//start the server
 	server := http.Server{
@@ -48,7 +59,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err := server.Shutdown(ctx)
+	err = server.Shutdown(ctx)
 	if err != nil {
 		slog.Error("failed to shutdown server ", slog.String("error", err.Error()))
 	}
