@@ -153,3 +153,27 @@ func UpdateStudent(storage storage.Storage) http.HandlerFunc {
 		response.WriteJson(w, http.StatusCreated, updated)
 	}
 }
+
+func DeleteStudent(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		slog.Info("Deleting the user with id ", slog.String("id", id))
+		Intid, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+			slog.Error("Can't conver the id to int64")
+			return
+		}
+		err = storage.DeleteStudentById(Intid)
+		if err != nil {
+			response.WriteJson(w, http.StatusBadGateway, response.GeneralError(err))
+			slog.Error("Falied to delete the student with id", slog.String("id", id))
+			return
+		}
+		slog.Info("Deleted Student with id: ", slog.String("id", id))
+		response.WriteJson(w, http.StatusOK, map[string]string{
+			"status": "success",
+		})
+		return
+	}
+}

@@ -9,7 +9,7 @@ import (
 )
 //HttpServer config info main address port etc
 type HttpServer struct {
-	Addr string `yaml:"address" env-required: "true"`
+	Addr string `yaml:"address" env-required:"true"`
 }
 
 // main config info having env path and storage variables
