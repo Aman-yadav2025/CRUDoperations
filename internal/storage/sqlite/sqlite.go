@@ -54,7 +54,7 @@ func (s *Sqlite) GetStudentById(id int64) (types.Student, error) {
 	stmt, err := s.Db.Prepare("SELECT * FROM students WHERE id = ? LIMIT 1")
 
 	if err != nil {
-		return types.Student{}, fmt.Errorf("Query Error %w",err)
+		return types.Student{}, fmt.Errorf("Query Error %w", err)
 	}
 	defer stmt.Close()
 
@@ -62,11 +62,72 @@ func (s *Sqlite) GetStudentById(id int64) (types.Student, error) {
 
 	err = stmt.QueryRow(id).Scan(&student.Id, &student.Name, &student.Email, &student.Age)
 	if err != nil {
-		if err == sql.ErrNoRows{
-			return types.Student{}, fmt.Errorf("No Student Found with Id %s",fmt.Sprint(id))
+		if err == sql.ErrNoRows {
+			return types.Student{}, fmt.Errorf("No Student Found with Id %s", fmt.Sprint(id))
 		}
 		return types.Student{}, fmt.Errorf("query error: %w", err)
 	}
 	return student, nil
 
 }
+
+func (s *Sqlite) GetAll() ([]types.Student, error) {
+	stmt, err := s.Db.Prepare("SELECT id, name, email, age FROM students")
+
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var students []types.Student
+
+	for rows.Next() {
+		var student types.Student
+
+		err := rows.Scan(&student.Id, &student.Name, &student.Email, &student.Age)
+		if err != nil {
+			return nil, err
+		}
+		students = append(students, student)
+	}
+	return students, nil
+}
+
+func (s *Sqlite) UpdateStudentById(name string, email string, age int, id int64) (types.Student, error) {
+	stmt, err := s.Db.Prepare("UPDATE students SET name = ? , email = ?, age = ? WHERE id = ?")
+
+	if err != nil {
+		return types.Student{}, fmt.Errorf("Query Error %w", err)
+	}
+	defer stmt.Close()
+
+	update, err := stmt.Exec(name, email, age, id)
+	if err != nil {
+		return types.Student{}, err
+	}
+	rowAffected, err := update.RowsAffected()
+
+	if err != nil {
+		return types.Student{}, err
+	}
+	if rowAffected == 0 {
+		return types.Student{}, fmt.Errorf("no student found with id %d", id)
+	}
+
+	updatedStudent := types.Student{
+		Id:    id,
+		Name:  name,
+		Email: email,
+		Age:   age,
+	}
+
+	return updatedStudent, nil
+}
+
